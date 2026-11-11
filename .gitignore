@@ -27,6 +27,8 @@ __MACOSX/
 *.json
 !sample_*.zip
 !sample_*.tar.gz
+!.devcontainer/**
+!devcontainer.json
 
 # IDE & editors
 .idea/

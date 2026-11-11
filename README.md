@@ -1,11 +1,64 @@
-<<<<<<< HEAD
-# Database Log Checker
+# Metro Database Log Checker
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/arpitchaturvedi78/MetroDatabaseLogChecker)
+[![CI & Test Suite](https://github.com/arpitchaturvedi78/MetroDatabaseLogChecker/actions/workflows/ci.yml/badge.svg)](https://github.com/arpitchaturvedi78/MetroDatabaseLogChecker/actions/workflows/ci.yml)
 
 A high-performance, zero-dependency tool and web application to recursively extract nested database archives (`.zip`, `.tar.gz`, `.tgz`), locate SQLite `app.db` / `.db` files, and scan every table for specific logs, pending upload transactions, and device diagnostics.
 
 ---
 
-## Key Features
+## 🚀 How to Run in GitHub (Quick Start)
+
+### Option 1: One-Click Cloud Browser (GitHub Codespaces)
+
+You can run this application entirely in your browser without installing anything locally:
+
+1. Click the badge: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/arpitchaturvedi78/MetroDatabaseLogChecker)
+   *(Or click **`< > Code`** $\rightarrow$ **Codespaces** $\rightarrow$ **Create codespace on main**)*
+2. GitHub automatically starts the container, launches the web app, and forwards port **8080**.
+3. When prompted, click **"Open in Browser"** to access the web application!
+
+---
+
+### Option 2: Run with Docker / Docker Compose
+
+If you or your team use Docker:
+
+```bash
+# Using Docker Compose (Single command):
+docker compose up --build
+
+# Or standard Docker:
+docker build -t metro-db-log-checker .
+docker run -p 8080:8080 metro-db-log-checker
+```
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
+
+---
+
+### Option 3: Automated Testing & CI in GitHub Actions
+
+The repository includes a GitHub Actions workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) that:
+- Automatically validates CLI scripts on Ubuntu runners on every push and pull request.
+- Can be manually triggered from the **Actions** tab in GitHub (**CI & Test Suite** $\rightarrow$ **Run workflow**).
+
+---
+
+### Option 4: Run Locally (macOS / Linux)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/arpitchaturvedi78/MetroDatabaseLogChecker.git
+cd MetroDatabaseLogChecker
+
+# 2. Start the Web App
+./start_app.sh 8080
+# Open http://localhost:8080 in your browser
+```
+
+---
+
+## 🌟 Key Features
 
 - **Nested Archive Decompression**: Recursively unpacks outer master archives containing multiple `.tar.gz`, `.tgz`, or `.zip` archives.
 - **SQLite Database Auto-Discovery**: Locates SQLite databases via header magic (`b"SQLite format 3\x00"`), automatically skipping macOS resource fork files (`._*`, `__MACOSX/`).
@@ -18,7 +71,7 @@ A high-performance, zero-dependency tool and web application to recursively extr
 
 ---
 
-## File Structure
+## 📁 File Structure
 
 | File | Description | Requirements |
 |---|---|---|
@@ -28,29 +81,13 @@ A high-performance, zero-dependency tool and web application to recursively extr
 | [`check_db_logs.sh`](check_db_logs.sh) | **Zero-dependency CLI script**. Native shell script for macOS/Linux using system `tar`, `unzip`, and `sqlite3`. | `bash`/`zsh`, `sqlite3`, `tar`, `unzip` |
 | [`check_db_logs.py`](check_db_logs.py) | **Full-featured Python CLI script**. Standalone script supporting SQL WHERE, regex, and age filtering. | Python 3.8+ |
 | [`create_sample_targz_zips.sh`](create_sample_targz_zips.sh) | Generates test master archive (`sample_master_with_targz.zip`) containing nested `.tar.gz` databases. | `sqlite3`, `tar`, `zip` |
+| [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json) | Configuration for 1-click execution in **GitHub Codespaces**. | GitHub |
+| [`Dockerfile`](Dockerfile) & [`docker-compose.yml`](docker-compose.yml) | Docker containerization for portability. | Docker |
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | GitHub Actions CI workflow to run automated tests on GitHub. | GitHub Actions |
 
 ---
 
-## Quick Start (Web Application)
-
-1. **Launch the Web App**:
-   ```bash
-   ./start_app.sh 8080
-   ```
-2. **Open in Browser**:
-   Navigate to [http://localhost:8080](http://localhost:8080).
-
-3. **Usage**:
-   - **Step 1**: Drag and drop your `.zip` or `.tar.gz` archive, or click **"Load Sample (.tar.gz databases)"**.
-   - **Step 2**: The app automatically selects `emv_transaction` and filters for records with `status = 4` or `cc_status = 'to_upload'` with `created_at` older than 7 days.
-   - **Step 3**: View matching records and click:
-     - **Download CSV**: Full CSV of all matched rows with `device_serial_no` as the first column.
-     - **Download JSON**: Full JSON array of matched records.
-     - **📱 Download Device Serial No**: Dedicated CSV of unique device serial numbers with their database archive and match count.
-
----
-
-## Command Line Usage
+## 💻 Command Line Usage
 
 ### 1. Using `check_db_logs.sh` (Shell)
 
@@ -78,7 +115,7 @@ python3 check_db_logs.py sample_master_with_targz.zip -t emv_transaction
 # Disable age filter (all dates):
 python3 check_db_logs.py sample_master_with_targz.zip -t emv_transaction -d 0
 
-# Export results to CSV or JSON:
+# Export results to CSV or JSON (includes device_serial_no column):
 python3 check_db_logs.py sample_master_with_targz.zip --csv matched_logs.csv
 python3 check_db_logs.py sample_master_with_targz.zip --json matched_logs.json
 ```
@@ -88,6 +125,3 @@ python3 check_db_logs.py sample_master_with_targz.zip --json matched_logs.json
 ## License
 
 MIT License.
-=======
-# MetroDatabaseLogChecker
->>>>>>> 15e8e0bc1bf398e94d896435d9b2e47d03dd5cc4

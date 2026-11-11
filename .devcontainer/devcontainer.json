@@ -1,0 +1,13 @@
+{
+  "name": "Database Log Checker",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Database Log Checker Web App",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "chmod +x *.sh *.py && ./create_sample_targz_zips.sh",
+  "postStartCommand": "./start_app.sh 8080"
+}

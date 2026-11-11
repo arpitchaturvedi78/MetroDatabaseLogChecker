@@ -1,0 +1,49 @@
+name: CI & Test Suite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3 tar unzip
+
+      - name: Make scripts executable
+        run: chmod +x *.sh *.py
+
+      - name: Generate Sample Nested Archives
+        run: ./create_sample_targz_zips.sh
+
+      - name: Test CLI Script (Python)
+        run: |
+          python3 check_db_logs.py sample_master_with_targz.zip -t emv_transaction --csv /tmp/test_py.csv
+          cat /tmp/test_py.csv
+
+      - name: Test CLI Script (Shell)
+        run: |
+          ./check_db_logs.sh sample_master_with_targz.zip -t emv_transaction
+
+      - name: Verify Web Server Startup
+        run: |
+          python3 server.py 8080 &
+          SERVER_PID=$!
+          sleep 2
+          curl -f http://127.0.0.1:8080/ || exit 1
+          kill $SERVER_PID
