@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Local environments & binaries
+bin/
+env/
+venv/
+.venv/
+ENV/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+__MACOSX/
+._*
+
+# Temporary test logs and outputs
+*.tmp
+*.log
+/tmp/
+*.csv
+*.json
+!sample_*.zip
+!sample_*.tar.gz
+
+# IDE & editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

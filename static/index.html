@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+  <title>Database Log Checker</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent: #a855f7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --highlight: #fef08a;
+      --highlight-text: #854d0e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-title p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e2e8f0;
+    }
+
+    /* Upload Area */
+    .upload-zone {
+      border: 2px dashed var(--card-border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .upload-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #0f172a;
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary {
+      background: #334155;
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover { background: #475569; }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    /* Grid & Dropdowns */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    /* Mode selector pills */
+    .mode-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .mode-pill {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-pill.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .age-pill {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .age-pill.active {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: #f59e0b;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    /* Quick Tags */
+    .preset-tags {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .preset-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .preset-tag:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stats-group {
+      display: flex;
+      gap: 16px;
+    }
+
+    .stat-item {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .stat-item strong {
+      color: var(--primary);
+      font-size: 15px;
+    }
+
+    /* Table */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      background: #0f172a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: #1e293b;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #cbd5e1;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      color: #e2e8f0;
+      vertical-align: top;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    tr:hover td {
+      background: rgba(30, 41, 59, 0.7);
+    }
+
+    .tag-db {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .tag-table {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .match-highlight {
+      background: var(--highlight);
+      color: var(--highlight-text);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <h1>📦 Database Log Checker</h1>
+        <p>Unzip nested database archives, inspect SQLite tables, and query logs with custom expressions.</p>
+      </div>
+      <div id="sessionBadge" style="display: none;">
+        <span class="badge" id="sessionLabel">Loaded: sample.zip</span>
+      </div>
+    </header>
+
+    <!-- STEP 1: Upload / Load ZIP -->
+    <div class="card">
+      <div class="card-title">1. Select Database Archive (.zip, .tar.gz, .tgz)</div>
+      <div class="upload-zone" id="dropZone">
+        <div class="upload-icon">📁</div>
+        <p style="font-weight: 600; margin-bottom: 4px;">Drag and drop your master .zip or .tar.gz database archive here, or click to browse</p>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Supports master archives with multiple nested <strong>.tar.gz</strong> files, or standalone <strong>.tar.gz</strong> / <strong>.zip</strong> archives</p>
+        <input type="file" id="fileInput" accept=".zip,.tar.gz,.tgz,.tar,.gz,.db" style="display: none;">
+        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+          <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Browse Files (.zip, .tar.gz)</button>
+          <button class="btn btn-outline" id="loadSampleTarGzBtn">Load Sample (.tar.gz databases)</button>
+          <button class="btn btn-outline" id="loadSampleBtn">Load Sample (.zip databases)</button>
+        </div>
+      </div>
+
+      <!-- Upload Error Notice -->
+      <div id="uploadErrorBanner" style="display: none; margin-top: 14px; padding: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #f87171; font-size: 13px;"></div>
+
+      <!-- Upload & Extraction Progress Bar -->
+      <div id="uploadProgressContainer" style="display: none; margin-top: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+          <span id="uploadStatusText" style="color: var(--primary); font-weight: 600;">Uploading file...</span>
+          <span id="uploadPercentText" style="color: var(--text-muted); font-family: monospace;">0%</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: #0f172a; border-radius: 999px; overflow: hidden; border: 1px solid var(--card-border);">
+          <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.15s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Database & Table Dropdowns -->
+    <div class="card" id="selectionCard" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title" style="margin-bottom: 0;">2. Select Database & Database Table</div>
+        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; font-size: 13px; color: #4ade80;">
+          <span>⚡ Checking Separately: <strong>status = 4</strong> &amp; <strong>cc_status = 'to_upload'</strong></span>
+        </div>
+      </div>
+
+      <div class="controls-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+        <!-- Database Dropdown -->
+        <div class="form-group">
+          <label for="dbSelect">Database Archive</label>
+          <select id="dbSelect">
+            <option value="__all__">All Databases</option>
+          </select>
+        </div>
+
+        <!-- Table Dropdown -->
+        <div class="form-group">
+          <label for="tableSelect">Database Table</label>
+          <select id="tableSelect">
+            <option value="__all__">All Tables</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Separate Filter Check Pills -->
+      <div style="margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Check Mode:</span>
+        <button class="mode-pill active" data-filter="all">All Matches (status = 4 OR cc_status = 'to_upload')</button>
+        <button class="mode-pill" data-filter="status_4">Only status = 4</button>
+        <button class="mode-pill" data-filter="cc_to_upload">Only cc_status = 'to_upload'</button>
+        <button class="mode-pill" data-filter="both">Both (status = 4 AND cc_status = 'to_upload')</button>
+      </div>
+
+      <!-- Log Age (created_at) Filter Pills -->
+      <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Log Age (created_at):</span>
+        <button class="age-pill active" data-days="7">⏱️ Older than 1 Week (&gt; 7 days) ★ Active</button>
+        <button class="age-pill" data-days="14">⏱️ Older than 2 Weeks (&gt; 14 days)</button>
+        <button class="age-pill" data-days="30">⏱️ Older than 1 Month (&gt; 30 days)</button>
+        <button class="age-pill" data-days="0">All Dates (No Age Filter)</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Query Results -->
+    <div class="card" id="resultsCard" style="display: none;">
+      <div class="stats-bar">
+        <div class="stats-group">
+          <div class="stat-item">Matches: <strong id="matchCount">0</strong></div>
+          <div class="stat-item">Devices: <strong id="deviceCount" style="color: #a5b4fc;">0</strong></div>
+          <div class="stat-item">Duration: <strong id="queryDuration">0ms</strong></div>
+          <div class="stat-item">Log Age: <strong id="ageBadge" style="color: #fbbf24;">Older than 1 week (&gt; 7 days)</strong></div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" id="exportCsvBtn">Download CSV</button>
+          <button class="btn btn-outline btn-sm" id="exportJsonBtn">Download JSON</button>
+          <button class="btn btn-outline btn-sm" id="exportDeviceSerialBtn" style="border-color: #6366f1; color: #a5b4fc;" title="Download CSV of Device Serial Numbers (separated from database before first underscore)">📱 Download Device Serial No</button>
+        </div>
+      </div>
+
+      <div id="warningBanner" style="display: none; padding: 12px; margin-bottom: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #fbbf24; font-size: 13px;"></div>
+
+      <div class="table-responsive">
+        <table id="resultsTable">
+          <thead>
+            <tr id="tableHead">
+              <th>Database</th>
+              <th>Table</th>
+              <th>Record Details</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Rows injected by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    let currentSessionId = null;
+    let metadata = null;
+    let activeFilterType = "all";
+    let activeDaysFilter = 7; // Default: older than 1 week (7 days) from current date
+    let lastResults = [];
+
+    // Elements
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const loadSampleBtn = document.getElementById("loadSampleBtn");
+    const loadSampleTarGzBtn = document.getElementById("loadSampleTarGzBtn");
+    const selectionCard = document.getElementById("selectionCard");
+    const resultsCard = document.getElementById("resultsCard");
+    const sessionBadge = document.getElementById("sessionBadge");
+    const sessionLabel = document.getElementById("sessionLabel");
+
+    const uploadProgressContainer = document.getElementById("uploadProgressContainer");
+    const uploadProgressBar = document.getElementById("uploadProgressBar");
+    const uploadStatusText = document.getElementById("uploadStatusText");
+    const uploadPercentText = document.getElementById("uploadPercentText");
+    const uploadErrorBanner = document.getElementById("uploadErrorBanner");
+
+    const dbSelect = document.getElementById("dbSelect");
+    const tableSelect = document.getElementById("tableSelect");
+
+    const matchCount = document.getElementById("matchCount");
+    const queryDuration = document.getElementById("queryDuration");
+    const tableHead = document.getElementById("tableHead");
+    const tableBody = document.getElementById("tableBody");
+
+    // File Drag & Drop
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length > 0) {
+        uploadZipFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        uploadZipFile(e.target.files[0]);
+      }
+    });
+
+    loadSampleTarGzBtn.addEventListener("click", () => {
+      loadSample("targz");
+    });
+
+    loadSampleBtn.addEventListener("click", () => {
+      loadSample("zip");
+    });
+
+    function isSupportedArchive(name) {
+      const lower = name.toLowerCase();
+      return (
+        lower.endsWith(".zip") ||
+        lower.endsWith(".tar.gz") ||
+        lower.endsWith(".tgz") ||
+        lower.endsWith(".tar") ||
+        lower.endsWith(".gz") ||
+        lower.endsWith(".db") ||
+        lower.endsWith(".sqlite") ||
+        lower.endsWith(".sqlite3")
+      );
+    }
+
+    // Upload Handler with live progress tracking
+    function uploadZipFile(file) {
+      if (!isSupportedArchive(file.name)) {
+        showError("Unsupported file type. Please select .zip, .tar.gz, .tgz, or SQLite database.");
+        return;
+      }
+
+      hideError();
+      uploadProgressContainer.style.display = "block";
+      uploadProgressBar.style.width = "0%";
+      uploadPercentText.textContent = "0%";
+      uploadStatusText.textContent = `Uploading ${file.name} (${formatBytes(file.size)})...`;
+      dropZone.style.opacity = "0.6";
+      dropZone.style.pointerEvents = "none";
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/upload", true);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.setRequestHeader("X-Filename", encodeURIComponent(file.name));
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          uploadProgressBar.style.width = `${percent}%`;
+          uploadPercentText.textContent = `${percent}%`;
+          uploadStatusText.textContent = `Uploading ${file.name} (${formatBytes(e.loaded)} / ${formatBytes(e.total)})...`;
+          if (percent >= 100) {
+            uploadStatusText.textContent = "Upload complete. Extracting archives, untarring .tar.gz and inspecting databases...";
+            uploadProgressBar.style.width = "100%";
+          }
+        }
+      };
+
+      xhr.onload = () => {
+        dropZone.style.opacity = "1";
+        dropZone.style.pointerEvents = "auto";
+        fileInput.value = ""; // Reset so choosing same file re-triggers change event
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.error) {
+              showError(data.error);
+              uploadProgressContainer.style.display = "none";
+            } else {
+              uploadProgressContainer.style.display = "none";
+              initSession(data);
+            }
+          } catch (err) {
+            showError("Invalid server response: " + err.message);
+            uploadProgressContainer.style.display = "none";
+          }
+        } else {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            showError(data.error || `Upload failed with HTTP status ${xhr.status}`);
+          } catch (_) {
+            showError(`Upload failed with HTTP status ${xhr.status}`);
+          }
+          uploadProgressContainer.style.display = "none";
+        }
+      };
+
+      xhr.onerror = () => {
+        dropZone.style.opacity = "1";
+        dropZone.style.pointerEvents = "auto";
+        fileInput.value = "";
+        showError("Network error occurred during file upload.");
+        uploadProgressContainer.style.display = "none";
+      };
+
+      xhr.send(file);
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return "0 Bytes";
+      const k = 1024;
+      const sizes = ["Bytes", "KB", "MB", "GB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+    }
+
+    function showError(msg) {
+      uploadErrorBanner.style.display = "block";
+      uploadErrorBanner.textContent = "❌ " + msg;
+    }
+
+    function hideError() {
+      uploadErrorBanner.style.display = "none";
+      uploadErrorBanner.textContent = "";
+    }
+
+    async function loadSample(type = "zip") {
+      setLoading(true, `Loading sample databases (${type})...`);
+      try {
+        const res = await fetch(`/api/load-sample?type=${type}`, { method: "POST" });
+        const data = await res.json();
+        if (data.error) {
+          alert("Error: " + data.error);
+        } else {
+          initSession(data);
+        }
+      } catch (err) {
+        alert("Failed to load sample: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function initSession(data) {
+      currentSessionId = data.session_id;
+      metadata = data.metadata;
+
+      sessionBadge.style.display = "block";
+      sessionLabel.textContent = `Loaded: ${metadata.filename} (${metadata.database_count} DBs)`;
+      selectionCard.style.display = "block";
+
+      populateDatabases();
+      executeQuery(); // initial query to show all
+    }
+
+    // Populate Database Dropdown
+    function populateDatabases() {
+      dbSelect.innerHTML = `<option value="__all__">All Databases (${metadata.databases.length})</option>`;
+      metadata.databases.forEach((db) => {
+        const opt = document.createElement("option");
+        opt.value = db.name;
+        opt.textContent = `${db.name} (${db.tables.length} tables)`;
+        dbSelect.appendChild(opt);
+      });
+      populateTables();
+    }
+
+    // Populate Table Dropdown based on chosen database
+    function populateTables(preferredTable = null) {
+      const selectedDb = dbSelect.value;
+      tableSelect.innerHTML = `<option value="__all__">All Tables</option>`;
+
+      let availableTables = [];
+      if (selectedDb === "__all__") {
+        const tableMap = new Map();
+        metadata.databases.forEach((db) => {
+          db.tables.forEach((t) => {
+            tableMap.set(t.name, (tableMap.get(t.name) || 0) + t.row_count);
+          });
+        });
+        tableMap.forEach((count, name) => {
+          availableTables.push({ name, count });
+        });
+      } else {
+        const dbObj = metadata.databases.find((d) => d.name === selectedDb);
+        if (dbObj) {
+          availableTables = dbObj.tables.map((t) => ({ name: t.name, count: t.row_count }));
+        }
+      }
+
+      availableTables.forEach((t) => {
+        const opt = document.createElement("option");
+        opt.value = t.name;
+        const isEmv = t.name.toLowerCase() === "emv_transaction";
+        opt.textContent = `${t.name} (${t.count} rows)${isEmv ? " (default)" : ""}`;
+        tableSelect.appendChild(opt);
+      });
+
+      // Default table selection logic:
+      // Priority 1: emv_transaction (or case-insensitive variation)
+      // Priority 2: User's explicitly preferred table if available
+      // Priority 3: __all__ (All Tables)
+      const emvMatch = availableTables.find((t) => t.name.toLowerCase() === "emv_transaction") ||
+                       availableTables.find((t) => t.name.toLowerCase() === "emv_transactions") ||
+                       availableTables.find((t) => t.name.toLowerCase().includes("emv_transaction")) ||
+                       availableTables.find((t) => t.name.toLowerCase().includes("emv"));
+
+      if (preferredTable === "__all__") {
+        tableSelect.value = "__all__";
+      } else if (preferredTable && availableTables.some((t) => t.name === preferredTable)) {
+        tableSelect.value = preferredTable;
+      } else if (emvMatch) {
+        tableSelect.value = emvMatch.name;
+      } else {
+        tableSelect.value = "__all__";
+      }
+    }
+
+    // Check Mode Pill event listeners
+    document.querySelectorAll(".mode-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".mode-pill").forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+        activeFilterType = pill.getAttribute("data-filter") || "all";
+        executeQuery();
+      });
+    });
+
+    // Log Age Pill event listeners (e.g. older than 1 week)
+    document.querySelectorAll(".age-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".age-pill").forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+        activeDaysFilter = parseInt(pill.getAttribute("data-days"), 10) || 0;
+        executeQuery();
+      });
+    });
+
+    // Event listeners for cascading dropdown changes - automatically triggers query!
+    dbSelect.addEventListener("change", () => {
+      const currentTable = tableSelect.value;
+      populateTables(currentTable);
+      executeQuery();
+    });
+
+    tableSelect.addEventListener("change", () => {
+      executeQuery();
+    });
+
+    // Query Execution: checks status = 4 and cc_status = 'to_upload' separately or combined
+    async function executeQuery() {
+      if (!currentSessionId) return;
+
+      matchCount.innerHTML = `<span class="loading-spinner"></span>`;
+
+      try {
+        const payload = {
+          session_id: currentSessionId,
+          database: dbSelect.value,
+          table: tableSelect.value,
+          filter_type: activeFilterType,
+          older_than_days: activeDaysFilter,
+          limit: 500,
+        };
+
+        const res = await fetch("/api/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (data.error) {
+          alert("Query Error: " + data.error);
+        } else {
+          renderResults(data);
+        }
+      } catch (err) {
+        alert("Execution error: " + err.message);
+      }
+    }
+
+    // Helper: extract Device Serial No separated from database name before first underscore
+    // Example: "1640104014_2026-11-08_23:30:04.tar.gz [app_database.db]" -> "1640104014"
+    function extractDeviceSerialNo(dbStr) {
+      if (!dbStr) return "";
+      let s = String(dbStr).trim();
+      s = s.split("/").pop(); // remove directory if present
+      if (s.startsWith("_unpacked_")) {
+        s = s.substring("_unpacked_".length);
+      }
+      const firstUnderscore = s.indexOf("_");
+      if (firstUnderscore !== -1) {
+        return s.substring(0, firstUnderscore).trim();
+      }
+      return s.split(".")[0].trim();
+    }
+
+    // Render Results Table
+    function renderResults(data) {
+      resultsCard.style.display = "block";
+      matchCount.textContent = data.total_matches;
+      queryDuration.textContent = data.execution_time_ms + "ms";
+      lastResults = data.results;
+
+      // Update unique devices count
+      const uniqueDevices = new Set(data.results.map((r) => extractDeviceSerialNo(r.database)));
+      const deviceCount = document.getElementById("deviceCount");
+      if (deviceCount) deviceCount.textContent = uniqueDevices.size;
+
+      // Update age filter badge
+      const ageBadge = document.getElementById("ageBadge");
+      if (ageBadge) {
+        if (data.older_than_days && data.threshold_date) {
+          ageBadge.textContent = `Older than ${data.older_than_days} days (< ${data.threshold_date.split(" ")[0]})`;
+        } else {
+          ageBadge.textContent = "All Dates (No Age Filter)";
+        }
+      }
+
+      // Handle warnings
+      const warningBanner = document.getElementById("warningBanner");
+      if (data.warnings && data.warnings.length > 0) {
+        warningBanner.style.display = "block";
+        warningBanner.innerHTML = data.warnings
+          .map((w) => `<div>⚠️ ${escapeHtml(w)}</div>`)
+          .join("");
+      } else {
+        warningBanner.style.display = "none";
+        warningBanner.innerHTML = "";
+      }
+
+      if (!data.results || data.results.length === 0) {
+        tableHead.innerHTML = `<tr><th>Notice</th></tr>`;
+        const ageMsg = data.older_than_days ? ` and <code>created_at</code> older than ${data.older_than_days} days (< ${data.threshold_date ? data.threshold_date.split(" ")[0] : ""})` : "";
+        tableBody.innerHTML = `<tr><td class="empty-state">No records found matching <code>status = 4</code> or <code>cc_status = 'to_upload'</code>${ageMsg} (Mode: ${activeFilterType})</td></tr>`;
+        return;
+      }
+
+      // Collect all unique column keys
+      const columns = new Set();
+      data.results.forEach((r) => {
+        Object.keys(r.row).forEach((k) => columns.add(k));
+      });
+      const colList = Array.from(columns);
+
+      // Build Table Header
+      let headHtml = `<th>Device Serial No</th><th>Database</th><th>Table</th><th>Match Reason</th>`;
+      colList.forEach((c) => {
+        headHtml += `<th>${escapeHtml(c)}</th>`;
+      });
+      tableHead.innerHTML = `<tr>${headHtml}</tr>`;
+
+      // Build Table Body
+      let bodyHtml = "";
+      data.results.forEach((item) => {
+        const serialNo = extractDeviceSerialNo(item.database);
+        bodyHtml += `<tr>`;
+        bodyHtml += `<td><span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); font-weight: bold; font-family: monospace;">${escapeHtml(serialNo)}</span></td>`;
+        bodyHtml += `<td><span class="tag-db">${escapeHtml(item.database)}</span></td>`;
+        bodyHtml += `<td><span class="tag-table">${escapeHtml(item.table)}</span></td>`;
+
+        let badgeClass = "background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);";
+        if (item.match_reason === "status = 4") {
+          badgeClass = "background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4);";
+        } else if (item.match_reason === "cc_status = 'to_upload'") {
+          badgeClass = "background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);";
+        }
+        const reasonBadge = `<span class="badge" style="${badgeClass}">${escapeHtml(item.match_reason || "Matched")}</span>`;
+        bodyHtml += `<td>${reasonBadge}</td>`;
+
+        colList.forEach((c) => {
+          let val = item.row[c] !== undefined && item.row[c] !== null ? String(item.row[c]) : "";
+          let safeVal = escapeHtml(val);
+          const cLower = c.toLowerCase();
+          if (cLower === "status" && (val === "4" || val === "4.0")) {
+            safeVal = `<span class="badge" style="background: rgba(34, 197, 94, 0.25); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.5); font-weight: bold;">${safeVal}</span>`;
+          } else if (cLower === "cc_status" && val.toLowerCase() === "to_upload") {
+            safeVal = `<span class="badge" style="background: rgba(56, 189, 248, 0.25); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); font-weight: bold;">${safeVal}</span>`;
+          } else if (cLower === "created_at" || cLower === "timestamp") {
+            safeVal = `<span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: bold;">⏱️ ${safeVal}</span>`;
+          }
+          bodyHtml += `<td>${safeVal}</td>`;
+        });
+        bodyHtml += `</tr>`;
+      });
+
+      tableBody.innerHTML = bodyHtml;
+    }
+
+
+    // Export Helpers
+    document.getElementById("exportJsonBtn").addEventListener("click", () => {
+      if (!lastResults.length) return alert("No results to export");
+      const blob = new Blob([JSON.stringify(lastResults, null, 2)], { type: "application/json" });
+      downloadBlob(blob, "database_logs.json");
+    });
+
+    // Full Log CSV Export (including Device Serial No as first column)
+    document.getElementById("exportCsvBtn").addEventListener("click", () => {
+      if (!lastResults.length) return alert("No results to export");
+      const cols = Array.from(new Set(lastResults.flatMap((r) => Object.keys(r.row))));
+      const headers = ["device_serial_no", "database", "table", "match_reason", ...cols];
+      
+      const rows = [headers.join(",")];
+      lastResults.forEach((r) => {
+        const serial = extractDeviceSerialNo(r.database);
+        const rowVals = [
+          `"${serial}"`,
+          `"${r.database.replace(/"/g, '""')}"`,
+          `"${r.table.replace(/"/g, '""')}"`,
+          `"${(r.match_reason || "").replace(/"/g, '""')}"`,
+          ...cols.map((c) => `"${(r.row[c] ?? "").toString().replace(/"/g, '""')}"`),
+        ];
+        rows.push(rowVals.join(","));
+      });
+
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      downloadBlob(blob, "database_logs.csv");
+    });
+
+    // Dedicated Device Serial No CSV Export (separated from database name before first underscore)
+    document.getElementById("exportDeviceSerialBtn").addEventListener("click", () => {
+      if (!lastResults.length) return alert("No results to export");
+
+      // Group matches by device serial number
+      const deviceMap = new Map();
+      lastResults.forEach((r) => {
+        const serial = extractDeviceSerialNo(r.database);
+        if (!deviceMap.has(serial)) {
+          deviceMap.set(serial, {
+            device_serial_no: serial,
+            database: r.database,
+            matched_count: 0,
+            tables: new Set(),
+            created_at: r.row["created_at"] || r.row["timestamp"] || "",
+          });
+        }
+        const entry = deviceMap.get(serial);
+        entry.matched_count += 1;
+        entry.tables.add(r.table);
+      });
+
+      const headers = ["device_serial_no", "database", "matched_records_count", "table", "created_at"];
+      const rows = [headers.join(",")];
+      deviceMap.forEach((entry) => {
+        const rowVals = [
+          `"${entry.device_serial_no}"`,
+          `"${entry.database.replace(/"/g, '""')}"`,
+          entry.matched_count,
+          `"${Array.from(entry.tables).join("; ")}"`,
+          `"${(entry.created_at || "").toString().replace(/"/g, '""')}"`,
+        ];
+        rows.push(rowVals.join(","));
+      });
+
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      downloadBlob(blob, "device_serial_numbers.csv");
+    });
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function setLoading(isLoading, text = "") {
+      if (isLoading) {
+        dropZone.style.opacity = "0.5";
+        dropZone.style.pointerEvents = "none";
+      } else {
+        dropZone.style.opacity = "1";
+        dropZone.style.pointerEvents = "auto";
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeRegex(string) {
+      return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
+    }
+  </script>
+</body>
+</html>
