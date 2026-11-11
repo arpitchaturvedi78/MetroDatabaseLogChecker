@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Database Log Checker
 
 A high-performance, zero-dependency tool and web application to recursively extract nested database archives (`.zip`, `.tar.gz`, `.tgz`), locate SQLite `app.db` / `.db` files, and scan every table for specific logs, pending upload transactions, and device diagnostics.
@@ -87,3 +88,6 @@ python3 check_db_logs.py sample_master_with_targz.zip --json matched_logs.json
 ## License
 
 MIT License.
+=======
+# MetroDatabaseLogChecker
+>>>>>>> 15e8e0bc1bf398e94d896435d9b2e47d03dd5cc4
